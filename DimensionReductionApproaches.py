@@ -214,6 +214,7 @@ class LinearDiscriminant(DimensionReduction):
         
         
 class MultilinearReduction(DimensionReduction):
+    @CenteringDecorator
     def MPCA(X_train,input_shape,p_tilde,q_tilde,**kwargs):
         T = kwargs.get('T',10)
         eps = kwargs.get('eps',0.001)
@@ -221,9 +222,8 @@ class MultilinearReduction(DimensionReduction):
         p = input_shape[1]
         q = input_shape[2]
         X_train_imgs = np.reshape(X_train,newshape=(n,p,q))
-        X_train_imgs_centered = TotalCentered(X_train_imgs)
         
-        X_train_imgs_centered_mul = np.matmul(np.transpose(X_train_imgs_centered),X_train_imgs_centered)
+        X_train_imgs_mul = np.matmul(np.transpose(X_train_imgs),X_train_imgs)
         
         
         while True :
