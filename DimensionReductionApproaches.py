@@ -157,12 +157,29 @@ class LinearDiscriminant(DimensionReduction):
         linear_subspace = np.matmul(V,U[:,0:r])
         return linear_subspace
     
-    def FLDA(X_train,Y_train,**kwargs):
+    def FFLDA(X_train,Y_train,**kwargs):
         total_centered = TotalCentered(X_train)
         num_group = int(max(Y_train)[0])
         N = X_train.shape[0]
         _, _, V_t = np.linalg.svd(a=total_centered,full_matrices=False)
         V = np.transpose(V_t)[:,0:N-num_group]
+        X_train_proj = np.matmul(X_train,V)
+        
+        between_groups_mean_centered = BetweenGroupMeanCentered(X_train_proj,Y_train)
+        within_groups_mean_centered = WithinGroupMeanCentered(X_train_proj,Y_train)
+        
+        between_groups_mean_centered_proj = np.matmul(between_groups_mean_centered,V)
+        within_groups_mean_centered_proj = np.matmul(within_groups_mean_centered,V)
+        
+        between_matrix = np.matmul(np.transpose(between_groups_mean_centered_proj),between_groups_mean_centered_proj)
+        within_matrix = np.matmul(np.transpose(within_groups_mean_centered_proj),within_groups_mean_centered_proj)
+        
+        target_matrix =np.matmul(np.linalg.inv(within_matrix),between_matrix)
+        _, V = np.linalg.eig(target_matrix)
+        return V
+        
+        
+        
         
 class MultilinearReduction(DimensionReduction):
     def MPCA(X_train,input_shape,p_tilde,q_tilde,**kwargs):
