@@ -68,7 +68,7 @@ class DimensionReduction():
 class LinearDiscriminant(DimensionReduction):
     
     
-    def NLDA(X_train,Y_train,kwargs):
+    def NLDA(X_train,Y_train,**kwargs):
         N = X_train.shape[0]
         X_train_centered = TotalCentered(X_train)
         _, _, V_t = np.linalg.svd(X_train_centered,full_matrices=False)
@@ -95,7 +95,7 @@ class LinearDiscriminant(DimensionReduction):
         linear_subspace = np.matmul(V_pre,linear_subspace)
         
         return linear_subspace
-    def PIRE(X_train,Y_train,kwargs):
+    def PIRE(X_train,Y_train,**kwargs):
         q = kwargs.get('q',3)
         between_groups_mean_centered = BetweenGroupMeanCentered(X_train,Y_train)
         X_train_centered = TotalCentered(X_train)
@@ -125,7 +125,7 @@ class LinearDiscriminant(DimensionReduction):
     
     
     
-    def DRLDA(X_train,Y_train,kwargs):
+    def DRLDA(X_train,Y_train,**kwargs):
         total_centered = TotalCentered(X_train)
         between_groups_mean_centered = BetweenGroupMeanCentered(X_train,Y_train)
         within_groups_mean_centered = WithinGroupMeanCentered(X_train,Y_train)
@@ -156,6 +156,14 @@ class LinearDiscriminant(DimensionReduction):
         U, _ = np.linalg.qr(target)
         linear_subspace = np.matmul(V,U[:,0:r])
         return linear_subspace
+    
+    def FLDA(X_train,Y_train,**kwargs):
+        total_centered = TotalCentered(X_train)
+        num_group = int(max(Y_train)[0])
+        N = X_train.shape[0]
+        _, _, V_t = np.linalg.svd(a=total_centered,full_matrices=False)
+        V = np.transpose(V_t)[:,0:N-num_group]
+        
 class MultilinearReduction(DimensionReduction):
     def MPCA(X_train,input_shape,p_tilde,q_tilde,**kwargs):
         T = kwargs.get('T',10)
