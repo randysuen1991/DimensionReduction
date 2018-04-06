@@ -67,7 +67,17 @@ class DimensionReduction():
     
 class LinearDiscriminant(DimensionReduction):
     
-    
+    def FLDA(X_train,Y_train,**kwargs):
+        between_groups_mean_centered = BetweenGroupMeanCentered(X_train,Y_train)
+        within_groups_mean_centered = WithinGroupMeanCentered(X_train,Y_train)
+        
+        between_matrix = np.matmul(np.transpose(between_groups_mean_centered),between_groups_mean_centered)
+        within_matrix = np.matmul(np.transpose(within_groups_mean_centered),within_groups_mean_centered)
+        
+        target_matrix =np.matmul(np.linalg.inv(within_matrix),between_matrix)
+        _, V = np.linalg.eig(target_matrix)
+        
+        return V
     def NLDA(X_train,Y_train,**kwargs):
         N = X_train.shape[0]
         X_train_centered = TotalCentered(X_train)
