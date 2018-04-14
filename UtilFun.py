@@ -1,8 +1,17 @@
 import numpy as np
+from sklearn.preprocessing import OneHotEncoder
+
+def OneHot(labels):
+    enc = OneHotEncoder()
+    labels = enc.fit_transform(labels)
+    return labels.toarray()
 # the following functions presume the imgs are black & white 
 
+
+# shape should be (None,height,width,num_channels)
 def vectors2imgs(vecs,shape):
-    shape = (shape[0][1],shape[0][2])
+#    shape = (shape[0][1],shape[0][2])
+    shape = (shape[1],shape[2])
     for i in range(vecs.shape[0]):
         vec = vecs[i,:]
         img = np.reshape(vec,newshape=shape,order='F')
