@@ -14,7 +14,7 @@ def vectors2imgs(vecs,shape):
     shape = (shape[1],shape[2])
     for i in range(vecs.shape[0]):
         vec = vecs[i,:]
-        img = np.reshape(vec,newshape=shape,order='F')
+        img = np.reshape(vec,newshape=shape,order='C')
         img = np.expand_dims(img,axis=0)
         if i == 0:
             imgs_out = img
