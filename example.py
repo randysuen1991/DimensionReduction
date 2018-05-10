@@ -1,18 +1,18 @@
-import tensorflow as tf
 import numpy as np
-
-
 
 
 
     
 # This example use the linear discriminant analysis to classify face data.
 def example1():
+    import sys
+    if 'C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor' not in sys.path :
+        sys.path.append('C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor')
     import Classifier as C
     import DimensionReductionApproaches as DRA
     import UtilFun as UF
     
-    name = 'GT.npy'
+    name = 'Yale.npy'
     data = np.load(name)
     imgs = data[0]
     labels = data[1]
@@ -28,32 +28,42 @@ def example1():
     result = classifier.Classify(X_train,Y_train,X_test,Y_test)
     print(result)
 
-
+# This example use deep convolution neural network to classify face data.
 def example2():
-#    model = classifier(input_shape=input_shape,num_classes = int(np.max(labels)))
-#    
-#    classifier.Construct(model,layer_type="conv2d",shape=[15,15,10],padding="VALID")
-#    classifier.Construct(model,layer_type="pooling",ksize=[4,4],pooling_type="avg",padding="VALID")
-##    classifier.Construct(model,layer_type="conv2d",shape=[5,5,5],padding="VALID")
-##    classifier.Construct(model,layer_type="pooling",ksize=[4,4],pooling_type="max",padding="VALID")
-#    classifier.Construct(model,layer_type="flatten")
-##    classifier.Construct(model,layer_type="fc",shape=200,last=False)
-##    classifier.Construct(model,layer_type="dropout",keep_prob=0.7)
-#    classifier.Construct(model,layer_type="fc",shape=int(num_classes),last=True)
-#    
-#    training_one_hot_labels = UF.transform_labels(training_labels)
-#    testing_one_hot_labels = UF.transform_labels(testing_labels)
-#    
-#    #training
-#    model.Fit(training,training_one_hot_labels)
-#
-#
-#    #testing
-#    correct_prediction = tf.equal(tf.argmax(model.out,1),tf.argmax(model.y,1))
-#    accuracy = tf.reduce_mean(tf.cast(correct_prediction,dtype=tf.float32))
-#    
-#    result = model.Run(accuracy,testing,testing_one_hot_labels)
-    pass
+    import tensorflow as tf
+    import sys
+    if 'C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Neural-Network' not in sys.path :
+        sys.path.append('C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Neural-Network')
+    import NeuralNetworkModel as NNM
+    import NeuralNetworkUnit as NNU
+    import NeuralNetworkLoss as NNL
+    import UtilFun as UF
+    
+    
+    data = np.load('Yale.npy')
+    imgs = data[0]
+    labels = data[1]
+    info = data[2]
+    img_size = info[0][1:3]
+    
+    
+    
+    X_train, Y_train, X_test, Y_test = UF.split_train_test(imgs,labels,2)
+    Y_train = UF.OneHot(Y_train)
+    Y_test = UF.OneHot(Y_test)
+    
+    
+    
+    
+    model = NNM.NeuralNetworkModel(dtpe=tf.float32,img_size=img_size)
+    #shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3
+    model.Build(NNU.ConvolutionUnit(dtype=tf.float32,shape=(5,5,3),transfer_fun=tf.tanh))
+    model.Build(NNU.AvgPooling(dtype=tf.float32,shape=(1,4,4,1)))
+    model.Build(NNU.Dropout(keep_prob=0.5))
+    model.Build(NNU.Flatten())
+    model.Build(NNU.NeuronLayer(hidden_dim=10,dtype=tf.float32))
+    model.Build(NNU.SoftMaxLayer())
+    model.Fit(X_train,Y_train,loss_fun=NNL.NeuralNetworkLoss.CrossEntropy,show_graph=True,num_epochs=1000)
 
 
 
@@ -136,4 +146,4 @@ def example3():
     print(np.mean(results3))
     
 if __name__ == "__main__":
-    example1()
+    example2()
