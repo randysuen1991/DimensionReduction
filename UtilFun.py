@@ -61,3 +61,25 @@ def split_train_test(X_train,Y_train,num_per_sub):
         
     return X_train_out, Y_train_out, X_test_out, Y_test_out
         
+
+def transform_imgs(imgs,shape):
+    for i in range(imgs.shape[0]):
+        img = imgs[i,:]
+        img = np.reshape(img,newshape=shape,order="F")
+        img = np.expand_dims(img,axis=0)
+        if i == 0:
+            imgs_out = img
+        else:
+            imgs_out = np.concatenate((imgs_out,img),axis=0)
+    imgs_out = np.expand_dims(imgs_out,axis=3)
+    return imgs_out
+
+def transform_labels(labels):
+    num_classes = np.max(labels)
+    labels -= 1
+    tensor_one_hot = tf.one_hot(labels,depth=num_classes)
+    with tf.Session() as sess:
+        one_hot = sess.run(tensor_one_hot)
+    return np.squeeze(one_hot)
+
+
