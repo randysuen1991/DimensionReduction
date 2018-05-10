@@ -143,7 +143,6 @@ class LinearDiscriminant(DimensionReduction):
         
         linear_subspace = np.matmul(Q,U)
         linear_subspace = np.matmul(V_pre,linear_subspace)
-        
         return linear_subspace
     
     @CenteringDecorator

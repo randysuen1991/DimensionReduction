@@ -38,9 +38,6 @@ def imgs2vectors(imgs):
 
 def split_train_test(X_train,Y_train,num_per_sub):
     
-
-    
-    
     for i in range(int(max(Y_train))):
         inds = np.where(Y_train.ravel()==i+1)[0]
         
