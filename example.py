@@ -6,7 +6,7 @@ import numpy as np
 
 
     
-    
+# This example use the linear discriminant analysis to classify face data.
 def example1():
     import Classifier as C
     import DimensionReductionApproaches as DRA
@@ -55,6 +55,9 @@ def example2():
 #    result = model.Run(accuracy,testing,testing_one_hot_labels)
     pass
 
+
+
+# This example use the linear discriminant analysis to classify normal distributed data.
 def example3():
     
     import DimensionReductionApproaches as DRA
