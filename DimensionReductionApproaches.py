@@ -12,8 +12,17 @@ def CenteringDecorator(fun):
         
     return decofun
 
-
-
+def PCPreprocessing(fun):
+    
+    def decofun(**kwargs):
+        X_train = kwargs.get('X_train')
+        r = np.linalg.matrix_rank(X_train)
+        _, _, V_t = np.linalg.svd(X_train,full_matrices=False)
+        V = np.transpose(V_t)[:,0:r]
+        X_train = np.matmul(X_train,V)
+        return np.matmul(V,fun(X_train=X_train,Y_train=kwargs.get('Y_train')))
+    
+    return decofun
 
 def TotalCentered(X):
     shape = [i for i in X.shape[1:]]
@@ -117,14 +126,10 @@ class LinearDiscriminant(DimensionReduction):
         
         return np.matmul(V_pre, V)
     
+    
+    @PCPreprocessing
     @CenteringDecorator
     def NLDA(X_train,Y_train,**kwargs):
-        N = X_train.shape[0]
-        
-        _, _, V_t = np.linalg.svd(X_train,full_matrices=False)
-        V_pre = np.transpose(V_t)[:,0:N-1]
-        X_train = np.matmul(X_train,V_pre)
-        
         
         within_groups_mean_centered = WithinGroupMeanCentered(X_train,Y_train)
         between_groups_mean_centered = BetweenGroupMeanCentered(X_train,Y_train)
@@ -142,19 +147,16 @@ class LinearDiscriminant(DimensionReduction):
         U = np.transpose(U_t)[:,0:r]
         
         linear_subspace = np.matmul(Q,U)
-        linear_subspace = np.matmul(V_pre,linear_subspace)
+        
         return linear_subspace
     
+    
+    @PCPreprocessing
     @CenteringDecorator
     def PIRE(X_train,Y_train,**kwargs):
         q = kwargs.get('q',3)
         
-        r = np.linalg.matrix_rank(X_train)
-        _, _, preproc_t = np.linalg.svd(X_train,full_matrices=False)
-        preproc = np.transpose(preproc_t)[:,0:r]
-        X_train = np.matmul(X_train,preproc)
-        
-        
+         
         between_groups_mean_centered = BetweenGroupMeanCentered(X_train,Y_train)
         
         r = np.linalg.matrix_rank(between_groups_mean_centered)
@@ -178,11 +180,10 @@ class LinearDiscriminant(DimensionReduction):
         linear_subspace = np.matmul(linear_subspace,V)
         linear_subspace, _ = np.linalg.qr(linear_subspace)
         
-        linear_subspace = np.matmul(preproc,linear_subspace)
         return linear_subspace
     
     
-    
+    @PCPreprocessing
     @CenteringDecorator
     def DRLDA(X_train,Y_train,**kwargs):
         
@@ -190,16 +191,8 @@ class LinearDiscriminant(DimensionReduction):
         within_groups_mean_centered = WithinGroupMeanCentered(X_train,Y_train)
         
         
-        pre_r = np.linalg.matrix_rank(X_train)
-        _, _, V_t = np.linalg.svd(a=X_train,full_matrices=False)
-        V = np.transpose(V_t)[:,0:pre_r]
-        
-        
-        between_groups_mean_centered_proj = np.matmul(between_groups_mean_centered,V)
-        within_groups_mean_centered_proj = np.matmul(within_groups_mean_centered,V)
-        
-        between_matrix = np.matmul(np.transpose(between_groups_mean_centered_proj),between_groups_mean_centered_proj)
-        within_matrix = np.matmul(np.transpose(within_groups_mean_centered_proj),within_groups_mean_centered_proj)
+        between_matrix = np.matmul(np.transpose(between_groups_mean_centered),between_groups_mean_centered)
+        within_matrix = np.matmul(np.transpose(within_groups_mean_centered),within_groups_mean_centered)
         
         within_matrix_pinv = np.linalg.pinv(within_matrix)
         _, S, _ = np.linalg.svd(np.matmul(within_matrix_pinv,between_matrix))
@@ -209,14 +202,12 @@ class LinearDiscriminant(DimensionReduction):
         alpha = S[0]
         
         r = np.linalg.matrix_rank(between_groups_mean_centered)
-        matrix = np.matrix(within_matrix_pinv + alpha * np.eye(N=pre_r))
+        dim = X_train.shape[1]
+        matrix = np.matrix(within_matrix_pinv + alpha * np.eye(N=dim))
         inv_matrix = np.linalg.inv(matrix)
         target = np.matmul(inv_matrix,between_matrix)
         U, _ = np.linalg.qr(target)
-        linear_subspace = np.matmul(V,U[:,0:r])
-        return linear_subspace
-    
-    
+        return U[:,0:r]
         
         
         

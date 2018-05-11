@@ -23,20 +23,20 @@ def example1():
     
     results1 = []
     
-    for i in range(1000):
+    for i in range(20):
     
     
         t1 = t.time()
         X_train, Y_train, X_test, Y_test = UF.split_train_test(imgs,labels,2)
         t2 = t.time()
-        print(t2-t1)
+#        print(t2-t1)
     
     
     
         X_train = UF.imgs2vectors(X_train)
         X_test = UF.imgs2vectors(X_test)
         t3 = t.time()
-        print(t3-t2)
+#        print(t3-t2)
     
     
         classifier = C.LinearDiscriminantClassifier(DRA.LinearDiscriminant.NLDA)
@@ -44,11 +44,12 @@ def example1():
         result = classifier.Classify(X_train,Y_train,X_test,Y_test)
         t4 = t.time()
         
-        print(t4-t3)
-        results1.append(result[0])
-    
+#        print(t4-t3)
         
-    print(np.mean(results1))
+        print(result[0])
+          
+        
+#    print(np.mean(results1))
 # This example use deep convolution neural network to classify face data.
 def example2():
     import tensorflow as tf
@@ -164,7 +165,7 @@ def example3():
         results3.append(result3[0])
         
 
-    print(np.mean(results3))
+    print(np.mean(results1),np.mean(results2),np.mean(results3))
     
 if __name__ == "__main__":
-    example1()
+    example3()
