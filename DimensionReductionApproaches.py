@@ -12,7 +12,7 @@ def CenteringDecorator(fun):
         
     return decofun
 
-def PCPreprocessing(fun):
+def PCDecorator(fun):
     
     def decofun(**kwargs):
         X_train = kwargs.get('X_train')
@@ -127,7 +127,7 @@ class LinearDiscriminant(DimensionReduction):
         return np.matmul(V_pre, V)
     
     
-    @PCPreprocessing
+    @PCDecorator
     @CenteringDecorator
     def NLDA(X_train,Y_train,**kwargs):
         
@@ -151,7 +151,7 @@ class LinearDiscriminant(DimensionReduction):
         return linear_subspace
     
     
-    @PCPreprocessing
+    @PCDecorator
     @CenteringDecorator
     def PIRE(X_train,Y_train,**kwargs):
         q = kwargs.get('q',3)
@@ -183,7 +183,7 @@ class LinearDiscriminant(DimensionReduction):
         return linear_subspace
     
     
-    @PCPreprocessing
+    @PCDecorator
     @CenteringDecorator
     def DRLDA(X_train,Y_train,**kwargs):
         

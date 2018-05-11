@@ -29,14 +29,10 @@ def example1():
         t1 = t.time()
         X_train, Y_train, X_test, Y_test = UF.split_train_test(imgs,labels,2)
         t2 = t.time()
-#        print(t2-t1)
-    
-    
     
         X_train = UF.imgs2vectors(X_train)
         X_test = UF.imgs2vectors(X_test)
         t3 = t.time()
-#        print(t3-t2)
     
     
         classifier = C.LinearDiscriminantClassifier(DRA.LinearDiscriminant.NLDA)
@@ -44,12 +40,10 @@ def example1():
         result = classifier.Classify(X_train,Y_train,X_test,Y_test)
         t4 = t.time()
         
-#        print(t4-t3)
-        
         print(result[0])
           
         
-#    print(np.mean(results1))
+
 # This example use deep convolution neural network to classify face data.
 def example2():
     import tensorflow as tf
@@ -116,7 +110,7 @@ def example3():
     
     
     
-    times = 10
+    times = 1000
     results1 = []
     results2 = []
     results3 = []
@@ -166,6 +160,37 @@ def example3():
         
 
     print(np.mean(results1),np.mean(results2),np.mean(results3))
+
+
+# This example uses the linear discriminant analysis to classify EEG data.
+def example4():
     
+    import sys
+    if 'C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor' not in sys.path :
+        sys.path.append('C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor')
+    import UtilFun as UF
+    import DimensionReductionApproaches as DRA
+    import Classifier as C   
+    
+    
+    data = np.load('EEG.npy')
+    imgs = data[0]
+    labels = data[1] 
+    
+    print(imgs.shape)
+    
+    
+    imgs = UF.imgs2vectors(imgs)
+    
+    time = 5000
+    R = []
+    for iter in range(time):
+        
+        X_train, Y_train, X_test, Y_test = UF.split_train_test(imgs,labels,2)
+        classifier1 = C.LinearDiscriminantClassifier(DRA.LinearDiscriminant.DRLDA)
+        classifier1.Fit(X_train,Y_train)
+        result1 = classifier1.Classify(X_train,Y_train,X_test,Y_test)
+        R.append(result1[0])
+    print(np.mean(R))
 if __name__ == "__main__":
     example3()
