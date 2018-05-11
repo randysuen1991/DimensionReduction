@@ -148,6 +148,13 @@ class LinearDiscriminant(DimensionReduction):
     @CenteringDecorator
     def PIRE(X_train,Y_train,**kwargs):
         q = kwargs.get('q',3)
+        
+        r = np.linalg.matrix_rank(X_train)
+        _, _, preproc_t = np.linalg.svd(X_train,full_matrices=False)
+        preproc = np.transpose(preproc_t)[:,0:r]
+        X_train = np.matmul(X_train,preproc)
+        
+        
         between_groups_mean_centered = BetweenGroupMeanCentered(X_train,Y_train)
         
         r = np.linalg.matrix_rank(between_groups_mean_centered)
@@ -171,7 +178,9 @@ class LinearDiscriminant(DimensionReduction):
         linear_subspace = np.matmul(linear_subspace,V)
         linear_subspace, _ = np.linalg.qr(linear_subspace)
         
+        linear_subspace = np.matmul(preproc,linear_subspace)
         return linear_subspace
+    
     
     
     @CenteringDecorator
