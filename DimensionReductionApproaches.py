@@ -213,20 +213,74 @@ class LinearDiscriminant(DimensionReduction):
         
         
 class MultilinearReduction(DimensionReduction):
+    
     @CenteringDecorator
     def MPCA(X_train,input_shape,p_tilde,q_tilde,**kwargs):
-        T = kwargs.get('T',10)
-        eps = kwargs.get('eps',0.001)
-        n = X_train.shape[0]
+        
+        N = X_train.shape[0]
         p = input_shape[1]
         q = input_shape[2]
-        X_train_imgs = np.reshape(X_train,newshape=(n,p,q))
         
-        X_train_imgs_mul = np.matmul(np.transpose(X_train_imgs),X_train_imgs)
         
+        if kwargs.get('vectors',False):
+            X_train = np.reshape(X_train,newshape=(N,p,q))
+        
+        A1 = np.random.uniform(low=-1,high=1,size=(p,p_tilde))
+        
+        rmsre1 = 1
+        d = 1
+        sg = 1
+        dc = 10**(-4)
         
         while True :
-            pass
+            
+            A0 = A1
+            rmsre0 = rmsre1
+            
+            M_B = np.zeros(shape=(q,q))
+            partial = np.matmul(A0,np.transpose(A0))
+            for iter2 in range(N):
+                M_B += np.matmul(np.transpose(X_train[iter2,:,:,0]),
+                                 np.matmul(partial,X_train[iter2,:,:,0]))
+            U, _, _ = np.linalg.svd(M_B,full_matrices=False)
+            B1 = U[:,0:q_tilde]
+            
+            
+            M_A = np.zeros(shape=(p,p))
+            partial = np.matmul(B1,np.transpose(B1))
+            for iter2 in range(N):
+                M_A += np.matmul(np.matmul(X_train[iter2,:,:,0],partial),
+                                 np.transpose(X_train[iter2,:,:,0]))
+            U, _, _ = np.linalg.svd(M_A,full_matrices=False)
+            A1 = U[:,0:p_tilde]
+            
+            for i in range(N):
+                A = np.matmul(A1,np.transpose(A1))
+                B = np.matmul(B1,np.transpose(B1))
+                AIB = np.matmul(A,np.matmul(X_train[i,:,:,:],B))
+                SQ_DIFF = (X_train[i,:,:,:] - AIB)**2
+                rmsre1 += np.sum(SQ_DIFF)
+                
+            rmsre1 = (rmsre1/N)**(0.5)
+            
+            d = np.abs(rmsre0-rmsre1) / rmsre0
+            sg += 1
         
+            if d < dc or sg>30:
+                break
         
+        U, _, _ = np.linalg.svd(M_A/N,full_matrices=False)
+        A = U[:,0:p_tilde]
+        U, _, _ = np.linalg.svd(M_B/N,full_matrices=False)
+        B = U[:,0:q_tilde]
+        
+        return A, B
+    
+    @CenteringDecorator
+    def MSIR(X_train,Y_train,input_shape,p_tilde,q_tilde,**kwargs):
+        pass
+    
+    @CenteringDecorator
+    def GLRAM(X_train,input_shape,p_tilde,q_tilde,**kwargs):
+        pass
         

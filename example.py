@@ -110,7 +110,7 @@ def example3():
     
     
     
-    times = 1000
+    times = 50
     results1 = []
     results2 = []
     results3 = []
@@ -191,6 +191,21 @@ def example4():
         classifier1.Fit(X_train,Y_train)
         result1 = classifier1.Classify(X_train,Y_train,X_test,Y_test)
         R.append(result1[0])
+        
     print(np.mean(R))
+    
+    
+def example5():
+    
+    import sys
+    if 'C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor' not in sys.path :
+        sys.path.append('C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor')
+    import UtilFun as UF
+    import DimensionReductionApproaches as DRA
+    import Classifier as C   
+    
+    
+    
+    
 if __name__ == "__main__":
     example3()

@@ -7,3 +7,4 @@ I use several linear discriminant analysis algorithms to reduce the dimension of
 algorithm.
 
 ![](https://github.com/randysuen1991/Dimension-Reduction-Approaches/blob/master/figures/ar_partial.jpg)
+
