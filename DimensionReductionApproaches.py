@@ -8,7 +8,11 @@ def CenteringDecorator(fun):
         shape.insert(0,1)
         X_mean = np.mean(X_train,axis=0)
         X_mean = np.reshape(X_mean,newshape=shape)
-        return fun(X_train-X_mean,kwargs.get('Y_train'))
+        return fun(X_train = X_train - X_mean,
+                   Y_train = kwargs.get('Y_train', None),
+                   input_shape = kwargs.get('input_shape', None),
+                   p_tilde = kwargs.get('p_tilde', None), 
+                   q_tilde = kwargs.get('q_tilde', None))
         
     return decofun
 
@@ -20,7 +24,8 @@ def PCDecorator(fun):
         _, _, V_t = np.linalg.svd(X_train,full_matrices=False)
         V = np.transpose(V_t)[:,0:r]
         X_train = np.matmul(X_train,V)
-        return np.matmul(V,fun(X_train=X_train,Y_train=kwargs.get('Y_train')))
+        return np.matmul(V, fun(X_train = X_train,
+                                Y_train = kwargs.get('Y_train',None)))
     
     return decofun
 
@@ -214,12 +219,25 @@ class LinearDiscriminant(DimensionReduction):
         
 class MultilinearReduction(DimensionReduction):
     
+    @classmethod
+    def TensorProject(cls,X_train,A,B):
+        N = X_train.shape[0]
+        X_train_proj = np.zeros(shape=(X_train.shape[0],A.shape[1],B.shape[1],X_train.shape[3]))
+        for i in range(N):
+            X_train_proj[i,:,:,0] = np.matmul(
+                                    np.matmul(np.transpose(A),X_train[i,:,:,0]),
+                                    B)
+        return X_train_proj
+    
+    
+    
+    
     @CenteringDecorator
     def MPCA(X_train,input_shape,p_tilde,q_tilde,**kwargs):
         
         N = X_train.shape[0]
-        p = input_shape[1]
-        q = input_shape[2]
+        p = input_shape[0]
+        q = input_shape[1]
         
         
         if kwargs.get('vectors',False):
@@ -257,8 +275,8 @@ class MultilinearReduction(DimensionReduction):
             for i in range(N):
                 A = np.matmul(A1,np.transpose(A1))
                 B = np.matmul(B1,np.transpose(B1))
-                AIB = np.matmul(A,np.matmul(X_train[i,:,:,:],B))
-                SQ_DIFF = (X_train[i,:,:,:] - AIB)**2
+                AIB = np.matmul(A,np.matmul(X_train[i,:,:,0],B))
+                SQ_DIFF = (X_train[i,:,:,0] - AIB)**2
                 rmsre1 += np.sum(SQ_DIFF)
                 
             rmsre1 = (rmsre1/N)**(0.5)

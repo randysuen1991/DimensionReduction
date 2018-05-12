@@ -194,7 +194,7 @@ def example4():
         
     print(np.mean(R))
     
-    
+# This example uses two-step classifier to classify the face images.
 def example5():
     
     import sys
@@ -204,8 +204,12 @@ def example5():
     import DimensionReductionApproaches as DRA
     import Classifier as C   
     
-    
-    
+    data = np.load('Yale.npy')
+    imgs = data[0]
+#    labels = data[1]
+    info = data[2]
+    input_shape = info[0][1:3]
+    A, B = DRA.MultilinearReduction.MPCA(X_train = imgs, input_shape = input_shape, p_tilde = 15, q_tilde = 10)
     
 if __name__ == "__main__":
-    example3()
+    example5()
