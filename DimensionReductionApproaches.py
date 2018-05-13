@@ -296,9 +296,80 @@ class MultilinearReduction(DimensionReduction):
     
     @CenteringDecorator
     def MSIR(X_train,Y_train,input_shape,p_tilde,q_tilde,**kwargs):
-        pass
-    
-    @CenteringDecorator
-    def GLRAM(X_train,input_shape,p_tilde,q_tilde,**kwargs):
-        pass
+        N = X_train.shape[0]
+        p = input_shape[0]
+        q = input_shape[1]
         
+        
+        if kwargs.get('vectors',False):
+            X_train = np.reshape(X_train,newshape=(N,p,q))
+        
+        A1 = np.random.uniform(low=-1,high=1,size=(p,p_tilde))
+        
+        rmsre1 = 1
+        d = 1
+        sg = 1
+        dc = 10**(-4)
+        while True :
+            
+            A0 = A1
+            rmsre0 = rmsre1
+            
+            
+            
+            
+            for i in range(N):
+                A = np.matmul(A1,np.transpose(A1))
+                B = np.matmul(B1,np.transpose(B1))
+                AIB = np.matmul(A,np.matmul(X_train[i,:,:,0],B))
+                SQ_DIFF = (X_train[i,:,:,0] - AIB)**2
+                rmsre1 += np.sum(SQ_DIFF)
+                
+            rmsre1 = (rmsre1/N)**(0.5)
+            
+            d = np.abs(rmsre0-rmsre1) / rmsre0
+            sg += 1
+        
+            if d < dc or sg>30:
+                break
+            
+            
+    def GLRAM(X_train,input_shape,p_tilde,q_tilde,**kwargs):
+        N = X_train.shape[0]
+        p = input_shape[0]
+        q = input_shape[1]
+        
+        
+        if kwargs.get('vectors',False):
+            X_train = np.reshape(X_train,newshape=(N,p,q))
+        
+        A1 = np.random.uniform(low=-1,high=1,size=(p,p_tilde))
+        
+        rmsre1 = 1
+        d = 1
+        sg = 1
+        dc = 10**(-4)
+        
+        while True :
+            
+            A0 = A1
+            rmsre0 = rmsre1
+
+            
+            
+            for i in range(N):
+                A = np.matmul(A1,np.transpose(A1))
+                B = np.matmul(B1,np.transpose(B1))
+                AIB = np.matmul(A,np.matmul(X_train[i,:,:,0],B))
+                SQ_DIFF = (X_train[i,:,:,0] - AIB)**2
+                rmsre1 += np.sum(SQ_DIFF)
+                
+            rmsre1 = (rmsre1/N)**(0.5)
+            
+            d = np.abs(rmsre0-rmsre1) / rmsre0
+            sg += 1
+        
+            if d < dc or sg>30:
+                break
+            
+            
