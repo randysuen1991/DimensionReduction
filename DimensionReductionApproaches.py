@@ -75,6 +75,19 @@ def BetweenGroupMeanCentered(X,Y):
     
     return between_groups_mean_centered
 
+def SumGroupMean(X,Y):
+    Y_ravel = Y.ravel()
+    n = X.shape[0]
+    shape = np.zeros(shape=(1,X.shape[1],X.shape[2],X.shape[3]))
+    for i in range(int(max(Y)[0])):
+        inds = np.where(Y_ravel == i + 1)[0]
+        X_group = X[inds,:]
+        n_sam_sub = len(X_group)
+        group_mean = np.mean(X_group,axis=0)
+        sum_group_mean += group_mean
+
+
+
 class DimensionReduction():
     
     @CenteringDecorator
@@ -373,3 +386,9 @@ class MultilinearReduction(DimensionReduction):
                 break
             
             
+if __name__ == '__main__' :
+    data = np.load('EEG.npy')
+    imgs = data[0]
+    print(imgs.shape)
+    a = BetweenGroupMeanCentered(imgs,data[1])
+    print(a.shape)
