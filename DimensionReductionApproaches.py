@@ -29,6 +29,9 @@ def PCDecorator(fun):
     
     return decofun
 
+
+
+
 def TotalCentered(X):
     shape = [i for i in X.shape[1:]]
     shape.insert(0,1)
@@ -74,17 +77,6 @@ def BetweenGroupMeanCentered(X,Y):
             between_groups_mean_centered = np.concatenate((between_groups_mean_centered,between_group_mean_centered),axis=0)
     
     return between_groups_mean_centered
-
-def SumGroupMean(X,Y):
-    Y_ravel = Y.ravel()
-    n = X.shape[0]
-    shape = np.zeros(shape=(1,X.shape[1],X.shape[2],X.shape[3]))
-    for i in range(int(max(Y)[0])):
-        inds = np.where(Y_ravel == i + 1)[0]
-        X_group = X[inds,:]
-        n_sam_sub = len(X_group)
-        group_mean = np.mean(X_group,axis=0)
-        sum_group_mean += group_mean
 
 
 
@@ -232,6 +224,13 @@ class LinearDiscriminant(DimensionReduction):
         
 class MultilinearReduction(DimensionReduction):
     
+    
+    
+            
+
+    
+    
+    
     @classmethod
     def TensorProject(cls,X_train,A,B):
         N = X_train.shape[0]
@@ -309,6 +308,38 @@ class MultilinearReduction(DimensionReduction):
     
     @CenteringDecorator
     def MSIR(X_train,Y_train,input_shape,p_tilde,q_tilde,**kwargs):
+        
+        
+        # X should be a tensor with shape = (no.sample,height,width,no.channel)
+        def TransformedSumGroupMeanA(X,Y,A):
+            Y_ravel = Y.ravel()
+            n = X.shape[0]
+            shape = (1,X.shape[1],X.shape[2],X.shape[3])
+            sum_group_mean = np.zeros(shape=shape)
+            for i in range(int(max(Y_ravel)[0])):
+                inds = np.where(Y_ravel == i + 1)[0]
+                X_group = X[inds,:,:,:]
+                n_sam_sub = X_group.shape[0]
+                group_mean = (n_sam_sub/n) * np.matmul(np.transpose(np.mean(X_group,axis=0)),A) 
+                sum_group_mean += np.matmul(group_mean,np.transpose(group_mean))
+            
+            return sum_group_mean
+        
+        def TransformedSumGroupMeanB(X,Y,B):
+            Y_ravel = Y.ravel()
+            n = X.shape[0]
+            shape = (1,X.shape[1],X.shape[2],X.shape[3])
+            sum_group_mean = np.zeros(shape=shape)
+            for i in range(int(max(Y_ravel)[0])):
+                inds = np.where(Y_ravel == i + 1)[0]
+                X_group = X[inds,:,:,:]
+                n_sam_sub = X_group.shape[0]
+                group_mean = (n_sam_sub/n) * np.matmul(np.mean(X_group,axis=0),A) 
+                sum_group_mean += np.matmul(group_mean,np.transpose(group_mean))
+            
+            return sum_group_mean
+        
+        
         N = X_train.shape[0]
         p = input_shape[0]
         q = input_shape[1]
@@ -318,6 +349,7 @@ class MultilinearReduction(DimensionReduction):
             X_train = np.reshape(X_train,newshape=(N,p,q))
         
         A1 = np.random.uniform(low=-1,high=1,size=(p,p_tilde))
+        A = np.eye(p)
         
         rmsre1 = 1
         d = 1
@@ -328,8 +360,13 @@ class MultilinearReduction(DimensionReduction):
             A0 = A1
             rmsre0 = rmsre1
             
+            sgmA = TransformedSumGroupMeanA(X_train,Y_train,A)
+            U, _, _ = np.linalg.svd(sgmA,full_matrices=False)
+            B = U[0:p_tilde]
             
-            
+            sgmB = TransformedSumGroupMeanB(X_train,Y_train,B)
+            U, _, _ = np.linalg.svd(sgmB,full_matrices=False)
+            A = U[0:q_tilde]
             
             for i in range(N):
                 A = np.matmul(A1,np.transpose(A1))
