@@ -226,11 +226,6 @@ class MultilinearReduction(DimensionReduction):
     
     
     
-            
-
-    
-    
-    
     @classmethod
     def TensorProject(cls,X_train,A,B):
         N = X_train.shape[0]
