@@ -246,6 +246,89 @@ class MultilinearReduction(DimensionReduction):
     
     @CenteringDecorator
     def MPCA(X_train,input_shape,p_tilde,q_tilde,**kwargs):
+        return MultilinearReduction.GLRAM(X_train=X_train,input_shape=input_shape,p_tilde=p_tilde,q_tilde)
+    
+        
+    
+    @CenteringDecorator
+    def MSIR(X_train,Y_train,input_shape,p_tilde,q_tilde,**kwargs):
+        
+        
+        # X should be a tensor with shape = (no.sample,height,width,no.channel)
+        def TransformedSumGroupMeanA(X,Y,A):
+            Y_ravel = Y.ravel()
+            n = X.shape[0]
+            shape = (1,X.shape[1],X.shape[2],X.shape[3])
+            sum_group_mean = np.zeros(shape=shape)
+            for i in range(int(max(Y_ravel)[0])):
+                inds = np.where(Y_ravel == i + 1)[0]
+                X_group = X[inds,:,:,:]
+                n_sam_sub = X_group.shape[0]
+                group_mean = (n_sam_sub/n) * np.matmul(np.transpose(np.mean(X_group,axis=0)),A) 
+                sum_group_mean += np.matmul(group_mean,np.transpose(group_mean))
+            
+            return sum_group_mean
+        
+        def TransformedSumGroupMeanB(X,Y,B):
+            Y_ravel = Y.ravel()
+            n = X.shape[0]
+            shape = (1,X.shape[1],X.shape[2],X.shape[3])
+            sum_group_mean = np.zeros(shape=shape)
+            for i in range(int(max(Y_ravel)[0])):
+                inds = np.where(Y_ravel == i + 1)[0]
+                X_group = X[inds,:,:,:]
+                n_sam_sub = X_group.shape[0]
+                group_mean = (n_sam_sub/n) * np.matmul(np.mean(X_group,axis=0),A) 
+                sum_group_mean += np.matmul(group_mean,np.transpose(group_mean))
+            
+            return sum_group_mean
+        
+        
+        N = X_train.shape[0]
+        p = input_shape[0]
+        q = input_shape[1]
+        
+        
+        if kwargs.get('vectors',False):
+            X_train = np.reshape(X_train,newshape=(N,p,q))
+        
+        
+        A = np.eye(p)
+        
+        rmsre1 = 1
+        d = 1
+        sg = 1
+        dc = 10**(-4)
+        while True :
+            
+            A0 = A
+            rmsre0 = rmsre1
+            
+            sgmA = TransformedSumGroupMeanA(X_train,Y_train,A0)
+            U, _, _ = np.linalg.svd(sgmA,full_matrices=False)
+            B1 = U[0:q_tilde]
+            
+            sgmB = TransformedSumGroupMeanB(X_train,Y_train,B)
+            U, _, _ = np.linalg.svd(sgmB,full_matrices=False)
+            A1 = U[0:p_tilde]
+            
+            for i in range(N):
+                A = np.matmul(A1,np.transpose(A1))
+                B = np.matmul(B1,np.transpose(B1))
+                AIB = np.matmul(A,np.matmul(X_train[i,:,:,0],B))
+                SQ_DIFF = (X_train[i,:,:,0] - AIB)**2
+                rmsre1 += np.sum(SQ_DIFF)
+                
+            rmsre1 = (rmsre1/N)**(0.5)
+            
+            d = np.abs(rmsre0-rmsre1) / rmsre0
+            sg += 1
+        
+            if d < dc or sg>30:
+                break
+            
+            
+    def GLRAM(X_train,input_shape,p_tilde,q_tilde,**kwargs):
         
         N = X_train.shape[0]
         p = input_shape[0]
@@ -305,122 +388,6 @@ class MultilinearReduction(DimensionReduction):
         B = U[:,0:q_tilde]
         
         return A, B
-    
-    @CenteringDecorator
-    def MSIR(X_train,Y_train,input_shape,p_tilde,q_tilde,**kwargs):
-        
-        
-        # X should be a tensor with shape = (no.sample,height,width,no.channel)
-        def TransformedSumGroupMeanA(X,Y,A):
-            Y_ravel = Y.ravel()
-            n = X.shape[0]
-            shape = (1,X.shape[1],X.shape[2],X.shape[3])
-            sum_group_mean = np.zeros(shape=shape)
-            for i in range(int(max(Y_ravel)[0])):
-                inds = np.where(Y_ravel == i + 1)[0]
-                X_group = X[inds,:,:,:]
-                n_sam_sub = X_group.shape[0]
-                group_mean = (n_sam_sub/n) * np.matmul(np.transpose(np.mean(X_group,axis=0)),A) 
-                sum_group_mean += np.matmul(group_mean,np.transpose(group_mean))
-            
-            return sum_group_mean
-        
-        def TransformedSumGroupMeanB(X,Y,B):
-            Y_ravel = Y.ravel()
-            n = X.shape[0]
-            shape = (1,X.shape[1],X.shape[2],X.shape[3])
-            sum_group_mean = np.zeros(shape=shape)
-            for i in range(int(max(Y_ravel)[0])):
-                inds = np.where(Y_ravel == i + 1)[0]
-                X_group = X[inds,:,:,:]
-                n_sam_sub = X_group.shape[0]
-                group_mean = (n_sam_sub/n) * np.matmul(np.mean(X_group,axis=0),A) 
-                sum_group_mean += np.matmul(group_mean,np.transpose(group_mean))
-            
-            return sum_group_mean
-        
-        
-        N = X_train.shape[0]
-        p = input_shape[0]
-        q = input_shape[1]
-        
-        
-        if kwargs.get('vectors',False):
-            X_train = np.reshape(X_train,newshape=(N,p,q))
-        
-        A1 = np.random.uniform(low=-1,high=1,size=(p,p_tilde))
-        A = np.eye(p)
-        
-        rmsre1 = 1
-        d = 1
-        sg = 1
-        dc = 10**(-4)
-        while True :
-            
-            A0 = A1
-            rmsre0 = rmsre1
-            
-            sgmA = TransformedSumGroupMeanA(X_train,Y_train,A)
-            U, _, _ = np.linalg.svd(sgmA,full_matrices=False)
-            B = U[0:p_tilde]
-            
-            sgmB = TransformedSumGroupMeanB(X_train,Y_train,B)
-            U, _, _ = np.linalg.svd(sgmB,full_matrices=False)
-            A = U[0:q_tilde]
-            
-            for i in range(N):
-                A = np.matmul(A1,np.transpose(A1))
-                B = np.matmul(B1,np.transpose(B1))
-                AIB = np.matmul(A,np.matmul(X_train[i,:,:,0],B))
-                SQ_DIFF = (X_train[i,:,:,0] - AIB)**2
-                rmsre1 += np.sum(SQ_DIFF)
-                
-            rmsre1 = (rmsre1/N)**(0.5)
-            
-            d = np.abs(rmsre0-rmsre1) / rmsre0
-            sg += 1
-        
-            if d < dc or sg>30:
-                break
-            
-            
-    def GLRAM(X_train,input_shape,p_tilde,q_tilde,**kwargs):
-        N = X_train.shape[0]
-        p = input_shape[0]
-        q = input_shape[1]
-        
-        
-        if kwargs.get('vectors',False):
-            X_train = np.reshape(X_train,newshape=(N,p,q))
-        
-        A1 = np.random.uniform(low=-1,high=1,size=(p,p_tilde))
-        
-        rmsre1 = 1
-        d = 1
-        sg = 1
-        dc = 10**(-4)
-        
-        while True :
-            
-            A0 = A1
-            rmsre0 = rmsre1
-
-            
-            
-            for i in range(N):
-                A = np.matmul(A1,np.transpose(A1))
-                B = np.matmul(B1,np.transpose(B1))
-                AIB = np.matmul(A,np.matmul(X_train[i,:,:,0],B))
-                SQ_DIFF = (X_train[i,:,:,0] - AIB)**2
-                rmsre1 += np.sum(SQ_DIFF)
-                
-            rmsre1 = (rmsre1/N)**(0.5)
-            
-            d = np.abs(rmsre0-rmsre1) / rmsre0
-            sg += 1
-        
-            if d < dc or sg>30:
-                break
             
             
 if __name__ == '__main__' :
