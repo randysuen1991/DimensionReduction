@@ -241,7 +241,7 @@ class MultilinearReduction(DimensionReduction):
     
     @CenteringDecorator
     def MPCA(X_train,input_shape,p_tilde,q_tilde,**kwargs):
-        return MultilinearReduction.GLRAM(X_train=X_train,input_shape=input_shape,p_tilde=p_tilde,q_tilde)
+        return MultilinearReduction.GLRAM(X_train=X_train,input_shape=input_shape,p_tilde=p_tilde,q_tilde=q_tilde)
     
         
     
@@ -384,10 +384,3 @@ class MultilinearReduction(DimensionReduction):
         
         return A, B
             
-            
-if __name__ == '__main__' :
-    data = np.load('EEG.npy')
-    imgs = data[0]
-    print(imgs.shape)
-    a = BetweenGroupMeanCentered(imgs,data[1])
-    print(a.shape)
