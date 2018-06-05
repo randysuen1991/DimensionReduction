@@ -44,7 +44,7 @@ def WithinGroupMeanCentered(X,Y):
     Y_ravel = Y.ravel()
     shape = [i for i in X.shape[1:]]
     shape.insert(0,1)
-    for i in range(int(max(Y)[0])):
+    for i in range(int(max(Y_ravel))):
         inds = np.where(Y_ravel == i + 1)[0]
         X_group = X[inds,:]            
         within_group_mean = np.mean(X_group,axis=0)
@@ -64,7 +64,7 @@ def BetweenGroupMeanCentered(X,Y):
     n = X.shape[0]
     shape = [i for i in X.shape[1:]]
     shape.insert(0,1)
-    for i in range(int(max(Y)[0])):
+    for i in range(int(max(Y_ravel))):
         inds = np.where(Y_ravel == i + 1)[0]
         X_group = X[inds,:]
         n_sam_sub = len(X_group)            
@@ -104,15 +104,15 @@ class LinearDiscriminant(DimensionReduction):
             raise ValueError('The dimension of the data should not be larger than the sample size of the data.')
         
         between_groups_mean_centered = BetweenGroupMeanCentered(X_train,Y_train)
+        
         within_groups_mean_centered = WithinGroupMeanCentered(X_train,Y_train)
         
         between_matrix = np.matmul(np.transpose(between_groups_mean_centered),between_groups_mean_centered)
         within_matrix = np.matmul(np.transpose(within_groups_mean_centered),within_groups_mean_centered)
-        
         target_matrix =np.matmul(np.linalg.inv(within_matrix),between_matrix)
-        _, V = np.linalg.eig(target_matrix)
-        
-        return V
+        s, V = np.linalg.eig(target_matrix)
+        r = np.linalg.matrix_rank(target_matrix)
+        return V[:,0:r]
     
     @CenteringDecorator
     def FFLDA(X_train,Y_train,**kwargs):
