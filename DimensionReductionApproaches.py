@@ -1,18 +1,26 @@
 import numpy as np
-
+import pandas as pd
+import matplotlib.pyplot as plt
 
 def CenteringDecorator(fun):
     def decofun(**kwargs):
         X_train = kwargs.get('X_train')
+        
+        if type(X_train) == pd.DataFrame :
+            X_train = X_train.values
+            
         shape = [i for i in X_train.shape[1:]]
         shape.insert(0,1)
         X_mean = np.mean(X_train,axis=0)
+        
         X_mean = np.reshape(X_mean,newshape=shape)
         return fun(X_train = X_train - X_mean,
                    Y_train = kwargs.get('Y_train', None),
                    input_shape = kwargs.get('input_shape', None),
                    p_tilde = kwargs.get('p_tilde', None), 
-                   q_tilde = kwargs.get('q_tilde', None))
+                   q_tilde = kwargs.get('q_tilde', None),
+                   n_components = kwargs.get('n_components'),
+                   plot = kwargs.get('plot',False))
         
     return decofun
 
@@ -85,15 +93,17 @@ class DimensionReduction():
     @CenteringDecorator
     def PCA(X_train,**kwargs):
         p = np.linalg.matrix_rank(X_train)
-        k = kwargs.get('q',p)
-        _, _, V_t = np.linalg.svd(X_train,full_matrices=False)
+        k = kwargs.get('n_components',p)
+        _, s, V_t = np.linalg.svd(X_train,full_matrices=False)
         V = np.transpose(V_t)
+        if kwargs.get('plot',False):
+            plt.plot(s**2)
         try:
             linear_subspace = V[:,0:k]
         except IndexError:
             linear_subspace = V[:,0:p]
         finally :
-            return linear_subspace
+            return linear_subspace, s**2
             
     
 class LinearDiscriminant(DimensionReduction):
