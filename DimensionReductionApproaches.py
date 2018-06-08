@@ -20,7 +20,10 @@ def CenteringDecorator(fun):
                    p_tilde = kwargs.get('p_tilde', None), 
                    q_tilde = kwargs.get('q_tilde', None),
                    n_components = kwargs.get('n_components'),
-                   plot = kwargs.get('plot',False))
+                   plot = kwargs.get('plot',False),
+                   num_each_side = kwargs.get('num_each_side',None),
+                   both_sides = kwargs.get('both_sides',None),
+                   abs = kwargs.get('abs',None))
         
     return decofun
 
