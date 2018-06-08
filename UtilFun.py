@@ -11,19 +11,21 @@ def OneHot(labels):
 
 
 
-def ConfusionMatrix(Y_true,Y_pred):
+def ConfusionMatrix(Y_true,Y_pred,plot):
     confmat = confusion_matrix(y_true=Y_true, y_pred=Y_pred)
-    fig, ax = plt.subplots(figsize=(2.5, 2.5))
-    ax.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
-    for i in range(confmat.shape[0]):
-        for j in range(confmat.shape[1]):
-            ax.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
+    if plot :
+        fig, ax = plt.subplots(figsize=(2.5, 2.5))
+        ax.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
+        for i in range(confmat.shape[0]):
+            for j in range(confmat.shape[1]):
+                ax.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
 
-    plt.xlabel('predicted label')
-    plt.ylabel('true label')
-
-    plt.tight_layout()    
-
+        plt.xlabel('predicted label')
+        plt.ylabel('true label')
+        
+        plt.tight_layout()    
+    
+    return confmat[1,1]/(confmat[0,1]+confmat[1,1]), confmat[0,1]+confmat[1,1]
 
 
 
