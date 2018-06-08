@@ -124,7 +124,8 @@ class LinearDiscriminant(DimensionReduction):
         within_matrix = np.matmul(np.transpose(within_groups_mean_centered),within_groups_mean_centered)
         target_matrix =np.matmul(np.linalg.inv(within_matrix),between_matrix)
         s, V = np.linalg.eig(target_matrix)
-        r = np.linalg.matrix_rank(target_matrix)
+        Y_uniq = np.unique(Y_train)
+        r = len(Y_uniq) - 1
         return V[:,0:r]
     
     @CenteringDecorator
