@@ -1,34 +1,64 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import normalize
 
-def CenteringDecorator(fun):
-    def decofun(**kwargs):
-        X_train = kwargs.get('X_train')
-        
-        if type(X_train) == pd.DataFrame :
-            X_train = X_train.values
-            
-        shape = [i for i in X_train.shape[1:]]
-        shape.insert(0,1)
-        X_mean = np.mean(X_train,axis=0)
-        
-        X_mean = np.reshape(X_mean,newshape=shape)
-        return fun(X_train = X_train - X_mean,
-                   Y_train = kwargs.get('Y_train', None),
-                   input_shape = kwargs.get('input_shape', None),
-                   p_tilde = kwargs.get('p_tilde', None), 
-                   q_tilde = kwargs.get('q_tilde', None),
-                   n_components = kwargs.get('n_components'),
-                   plot = kwargs.get('plot',False),
-                   num_each_side = kwargs.get('num_each_side',None),
-                   both_sides = kwargs.get('both_sides',None),
-                   abs = kwargs.get('abs',None))
-        
-    return decofun
+
+def NormalizingDecorator(*args):
+    def real_decorator(fun):
+        def decofun(**kwargs):
+            X_train = kwargs.get('X_train')
+            Y_train = kwargs.get('Y_train')
+            if type(X_train) == pd.DataFrame:
+                X_train = X_train.values
+            if type(Y_train) == pd.DataFrame:
+                Y_train = Y_train.values
+            if 'X_train' in args:
+                X_train = normalize(X_train, axis=0)
+            if 'Y_train' in args:
+                Y_train = normalize(Y_train, axis=0)
+            return fun(X_train=X_train,
+                       Y_train=Y_train)
+        return decofun
+    return real_decorator
+
+
+def CenteringDecorator(*args):
+    def real_decorator(fun):
+        def decofun(**kwargs):
+            X_train = kwargs.get('X_train')
+            Y_train = kwargs.get('Y_train')
+            if type(X_train) == pd.DataFrame:
+                X_train = X_train.values
+            if type(Y_train) == pd.DataFrame:
+                Y_train = Y_train.values
+            if 'X_train' in args:
+                shape = [i for i in X_train.shape[1:]]
+                shape.insert(0, 1)
+                X_mean = np.mean(X_train, axis=0)
+                X_mean = np.reshape(X_mean, newshape=shape)
+                X_train = X_train - X_mean
+            if 'Y_train' in args:
+                shape = [i for i in Y_train.shape[1:]]
+                shape.insert(0, 1)
+                Y_mean = np.mean(Y_train, axis=0)
+                Y_mean = np.reshape(Y_mean, newshape=shape)
+                Y_train = Y_train - Y_mean
+            return fun(X_train=X_train,
+                       Y_train=Y_train,
+                       input_shape=kwargs.get('input_shape', None),
+                       p_tilde=kwargs.get('p_tilde', None),
+                       q_tilde=kwargs.get('q_tilde', None),
+                       n_components=kwargs.get('n_components'),
+                       plot=kwargs.get('plot', False),
+                       num_each_side=kwargs.get('num_each_side', None),
+                       both_sides=kwargs.get('both_sides', None),
+                       abs=kwargs.get('abs', None))
+        return decofun
+    return real_decorator
+
 
 def PCDecorator(fun):
-    
     def decofun(**kwargs):
         X_train = kwargs.get('X_train')
         r = np.linalg.matrix_rank(X_train)
@@ -39,8 +69,6 @@ def PCDecorator(fun):
                                 Y_train = kwargs.get('Y_train',None)))
     
     return decofun
-
-
 
 
 def TotalCentered(X):
