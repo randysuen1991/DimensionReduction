@@ -6,7 +6,7 @@ from sklearn.preprocessing import normalize
 
 def NormalizingDecorator(*args):
     def real_decorator(fun):
-        def decofun(**kwargs):
+        def decofun(*args, **kwargs):
             X_train = kwargs.get('X_train')
             Y_train = kwargs.get('Y_train')
             if type(X_train) == pd.DataFrame:
@@ -16,8 +16,10 @@ def NormalizingDecorator(*args):
             if 'X_train' in args:
                 X_train = normalize(X_train, axis=0)
             if 'Y_train' in args:
+                # print(Y_train)
                 Y_train = normalize(Y_train, axis=0)
-            return fun(X_train=X_train,
+            return fun(*args,
+                       X_train=X_train,
                        Y_train=Y_train)
         return decofun
     return real_decorator
@@ -25,7 +27,7 @@ def NormalizingDecorator(*args):
 
 def CenteringDecorator(*args):
     def real_decorator(fun):
-        def decofun(**kwargs):
+        def decofun(*args, **kwargs):
             X_train = kwargs.get('X_train')
             Y_train = kwargs.get('Y_train')
             if type(X_train) == pd.DataFrame:
@@ -44,7 +46,8 @@ def CenteringDecorator(*args):
                 Y_mean = np.mean(Y_train, axis=0)
                 Y_mean = np.reshape(Y_mean, newshape=shape)
                 Y_train = Y_train - Y_mean
-            return fun(X_train=X_train,
+            return fun(*args,
+                       X_train=X_train,
                        Y_train=Y_train,
                        input_shape=kwargs.get('input_shape', None),
                        p_tilde=kwargs.get('p_tilde', None),
@@ -95,7 +98,6 @@ def WithinGroupMeanCentered(X,Y):
             within_groups_mean_centered = np.concatenate((within_groups_mean_centered,within_group_mean_centered),axis=0)
     
     return within_groups_mean_centered
-
 
 
 def BetweenGroupMeanCentered(X,Y):
