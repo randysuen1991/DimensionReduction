@@ -1,10 +1,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import normalize
 
 
-def NormalizingDecorator(*args):
+def StandardizingDecorator(*args):
     def real_decorator(fun):
         def decofun(*args, **kwargs):
             X_train = kwargs.get('X_train')
@@ -14,10 +13,11 @@ def NormalizingDecorator(*args):
             if type(Y_train) == pd.DataFrame:
                 Y_train = Y_train.values
             if 'X_train' in args:
-                X_train = normalize(X_train, axis=0)
+                std = np.std(X_train, axis=0)
+                X_train /= std
             if 'Y_train' in args:
-                # print(Y_train)
-                Y_train = normalize(Y_train, axis=0)
+                std = np.std(Y_train, axis=0)
+                Y_train /= std
             return fun(*args,
                        X_train=X_train,
                        Y_train=Y_train)
@@ -76,9 +76,9 @@ def PCDecorator(fun):
 
 def TotalCentered(X):
     shape = [i for i in X.shape[1:]]
-    shape.insert(0,1)
-    X_mean = np.mean(X,axis=0)
-    X_mean = np.reshape(X_mean,newshape=shape)
+    shape.insert(0, 1)
+    X_mean = np.mean(X, axis=0)
+    X_mean = np.reshape(X_mean, newshape=shape)
     return X - X_mean
 
 
