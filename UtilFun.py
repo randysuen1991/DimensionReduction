@@ -11,10 +11,9 @@ def onehot(labels):
 # the following functions presume the imgs are black & white 
 
 
-
-def ConfusionMatrix(Y_true,Y_pred,plot):
-    confmat = confusion_matrix(y_true=Y_true, y_pred=Y_pred)
-    if plot :
+def confusionmatrix(y_true, y_pred, plot):
+    confmat = confusion_matrix(y_true=y_true, y_pred=y_pred)
+    if plot:
         fig, ax = plt.subplots(figsize=(2.5, 2.5))
         ax.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
         for i in range(confmat.shape[0]):
@@ -26,10 +25,7 @@ def ConfusionMatrix(Y_true,Y_pred,plot):
         
         plt.tight_layout()    
     
-    return confmat[1,1]/(confmat[0,1]+confmat[1,1]), confmat[0,1]+confmat[1,1]
-
-
-
+    return confmat[1, 1]/(confmat[0, 1]+confmat[1, 1]), confmat[0, 1]+confmat[1, 1]
 
 
 # shape should be (None,height,width,num_channels)
