@@ -1,5 +1,7 @@
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 
 
 def onehot(labels):
@@ -7,6 +9,27 @@ def onehot(labels):
     labels = enc.fit_transform(labels)
     return labels.toarray()
 # the following functions presume the imgs are black & white 
+
+
+
+def ConfusionMatrix(Y_true,Y_pred,plot):
+    confmat = confusion_matrix(y_true=Y_true, y_pred=Y_pred)
+    if plot :
+        fig, ax = plt.subplots(figsize=(2.5, 2.5))
+        ax.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
+        for i in range(confmat.shape[0]):
+            for j in range(confmat.shape[1]):
+                ax.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
+
+        plt.xlabel('predicted label')
+        plt.ylabel('true label')
+        
+        plt.tight_layout()    
+    
+    return confmat[1,1]/(confmat[0,1]+confmat[1,1]), confmat[0,1]+confmat[1,1]
+
+
+
 
 
 # shape should be (None,height,width,num_channels)

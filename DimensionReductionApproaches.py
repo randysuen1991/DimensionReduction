@@ -1,23 +1,67 @@
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
 
-def CenteringDecorator(fun):
-    def decofun(**kwargs):
-        X_train = kwargs.get('X_train')
-        shape = [i for i in X_train.shape[1:]]
-        shape.insert(0,1)
-        X_mean = np.mean(X_train,axis=0)
-        X_mean = np.reshape(X_mean,newshape=shape)
-        return fun(X_train = X_train - X_mean,
-                   Y_train = kwargs.get('Y_train', None),
-                   input_shape = kwargs.get('input_shape', None),
-                   p_tilde = kwargs.get('p_tilde', None), 
-                   q_tilde = kwargs.get('q_tilde', None))
-        
-    return decofun
+def StandardizingDecorator(*args):
+    def real_decorator(fun):
+        def decofun(*args, **kwargs):
+            X_train = kwargs.get('X_train')
+            Y_train = kwargs.get('Y_train')
+            if type(X_train) == pd.DataFrame:
+                X_train = X_train.values
+            if type(Y_train) == pd.DataFrame:
+                Y_train = Y_train.values
+            if 'X_train' in args:
+                std = np.std(X_train, axis=0)
+                X_train /= std
+            if 'Y_train' in args:
+                std = np.std(Y_train, axis=0)
+                Y_train /= std
+            return fun(*args,
+                       X_train=X_train,
+                       Y_train=Y_train)
+        return decofun
+    return real_decorator
+
+
+def CenteringDecorator(*args):
+    def real_decorator(fun):
+        def decofun(*args, **kwargs):
+            X_train = kwargs.get('X_train')
+            Y_train = kwargs.get('Y_train')
+            if type(X_train) == pd.DataFrame:
+                X_train = X_train.values
+            if type(Y_train) == pd.DataFrame:
+                Y_train = Y_train.values
+            if 'X_train' in args:
+                shape = [i for i in X_train.shape[1:]]
+                shape.insert(0, 1)
+                X_mean = np.mean(X_train, axis=0)
+                X_mean = np.reshape(X_mean, newshape=shape)
+                X_train = X_train - X_mean
+            if 'Y_train' in args:
+                shape = [i for i in Y_train.shape[1:]]
+                shape.insert(0, 1)
+                Y_mean = np.mean(Y_train, axis=0)
+                Y_mean = np.reshape(Y_mean, newshape=shape)
+                Y_train = Y_train - Y_mean
+            return fun(*args,
+                       X_train=X_train,
+                       Y_train=Y_train,
+                       input_shape=kwargs.get('input_shape', None),
+                       p_tilde=kwargs.get('p_tilde', None),
+                       q_tilde=kwargs.get('q_tilde', None),
+                       n_components=kwargs.get('n_components'),
+                       plot=kwargs.get('plot', False),
+                       num_each_side=kwargs.get('num_each_side', None),
+                       both_sides=kwargs.get('both_sides', None),
+                       abs=kwargs.get('abs', None))
+        return decofun
+    return real_decorator
+
 
 def PCDecorator(fun):
-    
     def decofun(**kwargs):
         X_train = kwargs.get('X_train')
         r = np.linalg.matrix_rank(X_train)
@@ -30,13 +74,11 @@ def PCDecorator(fun):
     return decofun
 
 
-
-
 def TotalCentered(X):
     shape = [i for i in X.shape[1:]]
-    shape.insert(0,1)
-    X_mean = np.mean(X,axis=0)
-    X_mean = np.reshape(X_mean,newshape=shape)
+    shape.insert(0, 1)
+    X_mean = np.mean(X, axis=0)
+    X_mean = np.reshape(X_mean, newshape=shape)
     return X - X_mean
 
 
@@ -44,7 +86,7 @@ def WithinGroupMeanCentered(X,Y):
     Y_ravel = Y.ravel()
     shape = [i for i in X.shape[1:]]
     shape.insert(0,1)
-    for i in range(int(max(Y)[0])):
+    for i in range(int(max(Y_ravel))):
         inds = np.where(Y_ravel == i + 1)[0]
         X_group = X[inds,:]            
         within_group_mean = np.mean(X_group,axis=0)
@@ -58,13 +100,12 @@ def WithinGroupMeanCentered(X,Y):
     return within_groups_mean_centered
 
 
-
 def BetweenGroupMeanCentered(X,Y):
     Y_ravel = Y.ravel()
     n = X.shape[0]
     shape = [i for i in X.shape[1:]]
     shape.insert(0,1)
-    for i in range(int(max(Y)[0])):
+    for i in range(int(max(Y_ravel))):
         inds = np.where(Y_ravel == i + 1)[0]
         X_group = X[inds,:]
         n_sam_sub = len(X_group)            
@@ -85,15 +126,17 @@ class DimensionReduction():
     @CenteringDecorator
     def PCA(X_train,**kwargs):
         p = np.linalg.matrix_rank(X_train)
-        k = kwargs.get('q',p)
-        _, _, V_t = np.linalg.svd(X_train,full_matrices=False)
+        k = kwargs.get('n_components',p)
+        _, s, V_t = np.linalg.svd(X_train,full_matrices=False)
         V = np.transpose(V_t)
+        if kwargs.get('plot',False):
+            plt.plot(s**2)
         try:
             linear_subspace = V[:,0:k]
         except IndexError:
             linear_subspace = V[:,0:p]
         finally :
-            return linear_subspace
+            return linear_subspace, s**2
             
     
 class LinearDiscriminant(DimensionReduction):
@@ -104,15 +147,16 @@ class LinearDiscriminant(DimensionReduction):
             raise ValueError('The dimension of the data should not be larger than the sample size of the data.')
         
         between_groups_mean_centered = BetweenGroupMeanCentered(X_train,Y_train)
+        
         within_groups_mean_centered = WithinGroupMeanCentered(X_train,Y_train)
         
         between_matrix = np.matmul(np.transpose(between_groups_mean_centered),between_groups_mean_centered)
         within_matrix = np.matmul(np.transpose(within_groups_mean_centered),within_groups_mean_centered)
-        
         target_matrix =np.matmul(np.linalg.inv(within_matrix),between_matrix)
-        _, V = np.linalg.eig(target_matrix)
-        
-        return V
+        s, V = np.linalg.eig(target_matrix)
+        Y_uniq = np.unique(Y_train)
+        r = len(Y_uniq) - 1
+        return V[:,0:r]
     
     @CenteringDecorator
     def FFLDA(X_train,Y_train,**kwargs):
