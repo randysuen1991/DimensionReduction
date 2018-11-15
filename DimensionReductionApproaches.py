@@ -6,21 +6,21 @@ import matplotlib.pyplot as plt
 def StandardizingDecorator(*args):
     def real_decorator(fun):
         def decofun(*args, **kwargs):
-            X_train = kwargs.get('X_train')
-            Y_train = kwargs.get('Y_train')
-            if type(X_train) == pd.DataFrame:
-                X_train = X_train.values
-            if type(Y_train) == pd.DataFrame:
-                Y_train = Y_train.values
-            if 'X_train' in args:
-                std = np.std(X_train, axis=0)
-                X_train /= std
-            if 'Y_train' in args:
-                std = np.std(Y_train, axis=0)
-                Y_train /= std
+            x_train = kwargs.get('x_train')
+            y_train = kwargs.get('y_train')
+            if type(x_train) == pd.DataFrame:
+                x_train = x_train.values
+            if type(y_train) == pd.DataFrame:
+                y_train = y_train.values
+            if 'x_train' in args:
+                std = np.std(x_train, axis=0)
+                x_train /= std
+            if 'y_train' in args:
+                std = np.std(y_train, axis=0)
+                y_train /= std
             return fun(*args,
-                       X_train=X_train,
-                       Y_train=Y_train)
+                       x_train=x_train,
+                       y_train=y_train)
         return decofun
     return real_decorator
 
@@ -28,27 +28,27 @@ def StandardizingDecorator(*args):
 def CenteringDecorator(*args):
     def real_decorator(fun):
         def decofun(*args, **kwargs):
-            X_train = kwargs.get('X_train')
-            Y_train = kwargs.get('Y_train')
-            if type(X_train) == pd.DataFrame:
-                X_train = X_train.values
-            if type(Y_train) == pd.DataFrame:
-                Y_train = Y_train.values
-            if 'X_train' in args:
-                shape = [i for i in X_train.shape[1:]]
+            x_train = kwargs.get('x_train')
+            y_train = kwargs.get('y_train')
+            if type(x_train) == pd.DataFrame:
+                x_train = x_train.values
+            if type(y_train) == pd.DataFrame:
+                y_train = y_train.values
+            if 'x_train' in args:
+                shape = [i for i in x_train.shape[1:]]
                 shape.insert(0, 1)
-                X_mean = np.mean(X_train, axis=0)
+                X_mean = np.mean(x_train, axis=0)
                 X_mean = np.reshape(X_mean, newshape=shape)
-                X_train = X_train - X_mean
-            if 'Y_train' in args:
-                shape = [i for i in Y_train.shape[1:]]
+                x_train = x_train - X_mean
+            if 'y_train' in args:
+                shape = [i for i in y_train.shape[1:]]
                 shape.insert(0, 1)
-                Y_mean = np.mean(Y_train, axis=0)
+                Y_mean = np.mean(y_train, axis=0)
                 Y_mean = np.reshape(Y_mean, newshape=shape)
-                Y_train = Y_train - Y_mean
+                y_train = y_train - Y_mean
             return fun(*args,
-                       X_train=X_train,
-                       Y_train=Y_train,
+                       x_train=x_train,
+                       y_train=y_train,
                        input_shape=kwargs.get('input_shape', None),
                        p_tilde=kwargs.get('p_tilde', None),
                        q_tilde=kwargs.get('q_tilde', None),
@@ -63,13 +63,13 @@ def CenteringDecorator(*args):
 
 def PCDecorator(fun):
     def decofun(**kwargs):
-        X_train = kwargs.get('X_train')
-        r = np.linalg.matrix_rank(X_train)
-        _, _, V_t = np.linalg.svd(X_train,full_matrices=False)
+        x_train = kwargs.get('x_train')
+        r = np.linalg.matrix_rank(x_train)
+        _, _, V_t = np.linalg.svd(x_train,full_matrices=False)
         V = np.transpose(V_t)[:,0:r]
-        X_train = np.matmul(X_train,V)
-        return np.matmul(V, fun(X_train = X_train,
-                                Y_train = kwargs.get('Y_train',None)))
+        x_train = np.matmul(x_train,V)
+        return np.matmul(V, fun(x_train = x_train,
+                                y_train = kwargs.get('y_train',None)))
     
     return decofun
 
@@ -124,10 +124,10 @@ def BetweenGroupMeanCentered(X,Y):
 class DimensionReduction():
     
     @CenteringDecorator
-    def PCA(X_train,**kwargs):
-        p = np.linalg.matrix_rank(X_train)
+    def PCA(x_train,**kwargs):
+        p = np.linalg.matrix_rank(x_train)
         k = kwargs.get('n_components',p)
-        _, s, V_t = np.linalg.svd(X_train,full_matrices=False)
+        _, s, V_t = np.linalg.svd(x_train,full_matrices=False)
         V = np.transpose(V_t)
         if kwargs.get('plot',False):
             plt.plot(s**2)
@@ -142,31 +142,31 @@ class DimensionReduction():
 class LinearDiscriminant(DimensionReduction):
     
     @CenteringDecorator
-    def FLDA(X_train,Y_train,**kwargs):
-        if X_train.shape[1] > X_train.shape[0]:
+    def FLDA(x_train,y_train,**kwargs):
+        if x_train.shape[1] > x_train.shape[0]:
             raise ValueError('The dimension of the data should not be larger than the sample size of the data.')
         
-        between_groups_mean_centered = BetweenGroupMeanCentered(X_train,Y_train)
+        between_groups_mean_centered = BetweenGroupMeanCentered(x_train,y_train)
         
-        within_groups_mean_centered = WithinGroupMeanCentered(X_train,Y_train)
+        within_groups_mean_centered = WithinGroupMeanCentered(x_train,y_train)
         
         between_matrix = np.matmul(np.transpose(between_groups_mean_centered),between_groups_mean_centered)
         within_matrix = np.matmul(np.transpose(within_groups_mean_centered),within_groups_mean_centered)
         target_matrix =np.matmul(np.linalg.inv(within_matrix),between_matrix)
         s, V = np.linalg.eig(target_matrix)
-        Y_uniq = np.unique(Y_train)
+        Y_uniq = np.unique(y_train)
         r = len(Y_uniq) - 1
         return V[:,0:r]
     
     @CenteringDecorator
-    def FFLDA(X_train,Y_train,**kwargs):
+    def FFLDA(x_train,y_train,**kwargs):
         
-        between_groups_mean_centered = BetweenGroupMeanCentered(X_train,Y_train)
-        within_groups_mean_centered = WithinGroupMeanCentered(X_train,Y_train)
+        between_groups_mean_centered = BetweenGroupMeanCentered(x_train,y_train)
+        within_groups_mean_centered = WithinGroupMeanCentered(x_train,y_train)
         
         r = np.linalg.matrix_rank(within_groups_mean_centered)
         
-        _, _, V_t = np.linalg.svd(X_train,full_matrices=False)
+        _, _, V_t = np.linalg.svd(x_train,full_matrices=False)
         V_pre = np.transpose(V_t)[:,0:r]
         
         between_groups_mean_centered_proj = np.matmul(between_groups_mean_centered,V_pre)
@@ -183,10 +183,10 @@ class LinearDiscriminant(DimensionReduction):
     
     @PCDecorator
     @CenteringDecorator
-    def NLDA(X_train,Y_train,**kwargs):
+    def NLDA(x_train,y_train,**kwargs):
         
-        within_groups_mean_centered = WithinGroupMeanCentered(X_train,Y_train)
-        between_groups_mean_centered = BetweenGroupMeanCentered(X_train,Y_train)
+        within_groups_mean_centered = WithinGroupMeanCentered(x_train,y_train)
+        between_groups_mean_centered = BetweenGroupMeanCentered(x_train,y_train)
         
         
         r = np.linalg.matrix_rank(within_groups_mean_centered)
@@ -207,11 +207,11 @@ class LinearDiscriminant(DimensionReduction):
     
     @PCDecorator
     @CenteringDecorator
-    def PIRE(X_train,Y_train,**kwargs):
+    def PIRE(x_train,y_train,**kwargs):
         q = kwargs.get('q',3)
         
          
-        between_groups_mean_centered = BetweenGroupMeanCentered(X_train,Y_train)
+        between_groups_mean_centered = BetweenGroupMeanCentered(x_train,y_train)
         
         r = np.linalg.matrix_rank(between_groups_mean_centered)
         _, _, V_t = np.linalg.svd(between_groups_mean_centered,full_matrices=False)
@@ -219,13 +219,13 @@ class LinearDiscriminant(DimensionReduction):
         Rq = V
         append = V
         for i in range(q-1):
-            append = np.matmul(np.matmul(np.transpose(X_train),X_train),append)
+            append = np.matmul(np.matmul(np.transpose(x_train),x_train),append)
             Rq = np.concatenate((Rq,append),axis=1)
         # To avoid computational problem, we normalize the column vectors
         for i in range(Rq.shape[1]):
             Rq[:,i] = Rq[:,i] / np.linalg.norm(Rq[:,i])
         
-        inv_half = np.matmul(np.transpose(Rq),np.transpose(X_train))
+        inv_half = np.matmul(np.transpose(Rq),np.transpose(x_train))
         inv = np.matmul(inv_half,np.transpose(inv_half))
         inv = np.linalg.pinv(inv)
         
@@ -239,10 +239,10 @@ class LinearDiscriminant(DimensionReduction):
     
     @PCDecorator
     @CenteringDecorator
-    def DRLDA(X_train,Y_train,**kwargs):
+    def DRLDA(x_train,y_train,**kwargs):
         
-        between_groups_mean_centered = BetweenGroupMeanCentered(X_train,Y_train)
-        within_groups_mean_centered = WithinGroupMeanCentered(X_train,Y_train)
+        between_groups_mean_centered = BetweenGroupMeanCentered(x_train,y_train)
+        within_groups_mean_centered = WithinGroupMeanCentered(x_train,y_train)
         
         
         between_matrix = np.matmul(np.transpose(between_groups_mean_centered),between_groups_mean_centered)
@@ -256,7 +256,7 @@ class LinearDiscriminant(DimensionReduction):
         alpha = S[0]
         
         r = np.linalg.matrix_rank(between_groups_mean_centered)
-        dim = X_train.shape[1]
+        dim = x_train.shape[1]
         matrix = np.matrix(within_matrix_pinv + alpha * np.eye(N=dim))
         inv_matrix = np.linalg.inv(matrix)
         target = np.matmul(inv_matrix,between_matrix)
@@ -271,26 +271,26 @@ class MultilinearReduction(DimensionReduction):
     
     
     @classmethod
-    def TensorProject(cls,X_train,A,B):
-        N = X_train.shape[0]
-        X_train_proj = np.zeros(shape=(X_train.shape[0],A.shape[1],B.shape[1],X_train.shape[3]))
+    def TensorProject(cls,x_train,A,B):
+        N = x_train.shape[0]
+        x_train_proj = np.zeros(shape=(x_train.shape[0],A.shape[1],B.shape[1],x_train.shape[3]))
         for i in range(N):
-            X_train_proj[i,:,:,0] = np.matmul(
-                                    np.matmul(np.transpose(A),X_train[i,:,:,0]),
+            x_train_proj[i,:,:,0] = np.matmul(
+                                    np.matmul(np.transpose(A),x_train[i,:,:,0]),
                                     B)
-        return X_train_proj
+        return x_train_proj
     
     
     
     
     @CenteringDecorator
-    def MPCA(X_train,input_shape,p_tilde,q_tilde,**kwargs):
-        return MultilinearReduction.GLRAM(X_train=X_train,input_shape=input_shape,p_tilde=p_tilde,q_tilde=q_tilde)
+    def MPCA(x_train,input_shape,p_tilde,q_tilde,**kwargs):
+        return MultilinearReduction.GLRAM(x_train=x_train,input_shape=input_shape,p_tilde=p_tilde,q_tilde=q_tilde)
     
         
     
     @CenteringDecorator
-    def MSIR(X_train,Y_train,input_shape,p_tilde,q_tilde,**kwargs):
+    def MSIR(x_train,y_train,input_shape,p_tilde,q_tilde,**kwargs):
         
         
         # X should be a tensor with shape = (no.sample,height,width,no.channel)
@@ -323,13 +323,13 @@ class MultilinearReduction(DimensionReduction):
             return sum_group_mean
         
         
-        N = X_train.shape[0]
+        N = x_train.shape[0]
         p = input_shape[0]
         q = input_shape[1]
         
         
         if kwargs.get('vectors',False):
-            X_train = np.reshape(X_train,newshape=(N,p,q))
+            x_train = np.reshape(x_train,newshape=(N,p,q))
         
         
         A = np.eye(p)
@@ -343,19 +343,19 @@ class MultilinearReduction(DimensionReduction):
             A0 = A
             rmsre0 = rmsre1
             
-            sgmA = TransformedSumGroupMeanA(X_train,Y_train,A0)
+            sgmA = TransformedSumGroupMeanA(x_train,y_train,A0)
             U, _, _ = np.linalg.svd(sgmA,full_matrices=False)
             B1 = U[0:q_tilde]
             
-            sgmB = TransformedSumGroupMeanB(X_train,Y_train,B)
+            sgmB = TransformedSumGroupMeanB(x_train,y_train,B)
             U, _, _ = np.linalg.svd(sgmB,full_matrices=False)
             A1 = U[0:p_tilde]
             
             for i in range(N):
                 A = np.matmul(A1,np.transpose(A1))
                 B = np.matmul(B1,np.transpose(B1))
-                AIB = np.matmul(A,np.matmul(X_train[i,:,:,0],B))
-                SQ_DIFF = (X_train[i,:,:,0] - AIB)**2
+                AIB = np.matmul(A,np.matmul(x_train[i,:,:,0],B))
+                SQ_DIFF = (x_train[i,:,:,0] - AIB)**2
                 rmsre1 += np.sum(SQ_DIFF)
                 
             rmsre1 = (rmsre1/N)**(0.5)
@@ -367,15 +367,15 @@ class MultilinearReduction(DimensionReduction):
                 break
             
             
-    def GLRAM(X_train,input_shape,p_tilde,q_tilde,**kwargs):
+    def GLRAM(x_train,input_shape,p_tilde,q_tilde,**kwargs):
         
-        N = X_train.shape[0]
+        N = x_train.shape[0]
         p = input_shape[0]
         q = input_shape[1]
         
         
         if kwargs.get('vectors',False):
-            X_train = np.reshape(X_train,newshape=(N,p,q))
+            x_train = np.reshape(x_train,newshape=(N,p,q))
         
         A1 = np.random.uniform(low=-1,high=1,size=(p,p_tilde))
         
@@ -392,8 +392,8 @@ class MultilinearReduction(DimensionReduction):
             M_B = np.zeros(shape=(q,q))
             partial = np.matmul(A0,np.transpose(A0))
             for iter2 in range(N):
-                M_B += np.matmul(np.transpose(X_train[iter2,:,:,0]),
-                                 np.matmul(partial,X_train[iter2,:,:,0]))
+                M_B += np.matmul(np.transpose(x_train[iter2,:,:,0]),
+                                 np.matmul(partial,x_train[iter2,:,:,0]))
             U, _, _ = np.linalg.svd(M_B,full_matrices=False)
             B1 = U[:,0:q_tilde]
             
@@ -401,16 +401,16 @@ class MultilinearReduction(DimensionReduction):
             M_A = np.zeros(shape=(p,p))
             partial = np.matmul(B1,np.transpose(B1))
             for iter2 in range(N):
-                M_A += np.matmul(np.matmul(X_train[iter2,:,:,0],partial),
-                                 np.transpose(X_train[iter2,:,:,0]))
+                M_A += np.matmul(np.matmul(x_train[iter2,:,:,0],partial),
+                                 np.transpose(x_train[iter2,:,:,0]))
             U, _, _ = np.linalg.svd(M_A,full_matrices=False)
             A1 = U[:,0:p_tilde]
             
             for i in range(N):
                 A = np.matmul(A1,np.transpose(A1))
                 B = np.matmul(B1,np.transpose(B1))
-                AIB = np.matmul(A,np.matmul(X_train[i,:,:,0],B))
-                SQ_DIFF = (X_train[i,:,:,0] - AIB)**2
+                AIB = np.matmul(A,np.matmul(x_train[i,:,:,0],B))
+                SQ_DIFF = (x_train[i,:,:,0] - AIB)**2
                 rmsre1 += np.sum(SQ_DIFF)
                 
             rmsre1 = (rmsre1/N)**(0.5)
