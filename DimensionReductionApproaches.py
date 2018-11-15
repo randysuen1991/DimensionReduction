@@ -120,7 +120,6 @@ def BetweenGroupMeanCentered(X,Y):
     return between_groups_mean_centered
 
 
-
 class DimensionReduction():
     
     @CenteringDecorator
@@ -135,14 +134,15 @@ class DimensionReduction():
             linear_subspace = V[:,0:k]
         except IndexError:
             linear_subspace = V[:,0:p]
-        finally :
+        finally:
             return linear_subspace, s**2
             
     
 class LinearDiscriminant(DimensionReduction):
-    
+
+    @staticmethod
     @CenteringDecorator
-    def FLDA(x_train,y_train,**kwargs):
+    def FLDA(x_train, y_train, **kwargs):
         if x_train.shape[1] > x_train.shape[0]:
             raise ValueError('The dimension of the data should not be larger than the sample size of the data.')
         
@@ -157,7 +157,8 @@ class LinearDiscriminant(DimensionReduction):
         Y_uniq = np.unique(y_train)
         r = len(Y_uniq) - 1
         return V[:,0:r]
-    
+
+    @staticmethod
     @CenteringDecorator
     def FFLDA(x_train,y_train,**kwargs):
         
@@ -180,7 +181,7 @@ class LinearDiscriminant(DimensionReduction):
         
         return np.matmul(V_pre, V)
     
-    
+    @staticmethod
     @PCDecorator
     @CenteringDecorator
     def NLDA(x_train,y_train,**kwargs):
@@ -204,13 +205,12 @@ class LinearDiscriminant(DimensionReduction):
         
         return linear_subspace
     
-    
+    @staticmethod
     @PCDecorator
     @CenteringDecorator
     def PIRE(x_train,y_train,**kwargs):
         q = kwargs.get('q',3)
         
-         
         between_groups_mean_centered = BetweenGroupMeanCentered(x_train,y_train)
         
         r = np.linalg.matrix_rank(between_groups_mean_centered)
@@ -236,7 +236,7 @@ class LinearDiscriminant(DimensionReduction):
         
         return linear_subspace
     
-    
+    @staticmethod
     @PCDecorator
     @CenteringDecorator
     def DRLDA(x_train,y_train,**kwargs):
@@ -262,16 +262,12 @@ class LinearDiscriminant(DimensionReduction):
         target = np.matmul(inv_matrix,between_matrix)
         U, _ = np.linalg.qr(target)
         return U[:,0:r]
-        
-        
-        
+
         
 class MultilinearReduction(DimensionReduction):
-    
-    
-    
-    @classmethod
-    def TensorProject(cls,x_train,A,B):
+
+    @staticmethod
+    def TensorProject(x_train, A, B):
         N = x_train.shape[0]
         x_train_proj = np.zeros(shape=(x_train.shape[0],A.shape[1],B.shape[1],x_train.shape[3]))
         for i in range(N):
@@ -279,20 +275,16 @@ class MultilinearReduction(DimensionReduction):
                                     np.matmul(np.transpose(A),x_train[i,:,:,0]),
                                     B)
         return x_train_proj
-    
-    
-    
-    
+
+    @staticmethod
     @CenteringDecorator
     def MPCA(x_train,input_shape,p_tilde,q_tilde,**kwargs):
         return MultilinearReduction.GLRAM(x_train=x_train,input_shape=input_shape,p_tilde=p_tilde,q_tilde=q_tilde)
-    
-        
-    
+
+    @staticmethod
     @CenteringDecorator
     def MSIR(x_train,y_train,input_shape,p_tilde,q_tilde,**kwargs):
-        
-        
+
         # X should be a tensor with shape = (no.sample,height,width,no.channel)
         def TransformedSumGroupMeanA(X,Y,A):
             Y_ravel = Y.ravel()
@@ -366,14 +358,13 @@ class MultilinearReduction(DimensionReduction):
             if d < dc or sg>30:
                 break
             
-            
+    @staticmethod
     def GLRAM(x_train,input_shape,p_tilde,q_tilde,**kwargs):
         
         N = x_train.shape[0]
         p = input_shape[0]
         q = input_shape[1]
-        
-        
+
         if kwargs.get('vectors',False):
             x_train = np.reshape(x_train,newshape=(N,p,q))
         
@@ -384,7 +375,7 @@ class MultilinearReduction(DimensionReduction):
         sg = 1
         dc = 10**(-4)
         
-        while True :
+        while True:
             
             A0 = A1
             rmsre0 = rmsre1
@@ -394,12 +385,11 @@ class MultilinearReduction(DimensionReduction):
             for iter2 in range(N):
                 M_B += np.matmul(np.transpose(x_train[iter2,:,:,0]),
                                  np.matmul(partial,x_train[iter2,:,:,0]))
-            U, _, _ = np.linalg.svd(M_B,full_matrices=False)
-            B1 = U[:,0:q_tilde]
-            
-            
-            M_A = np.zeros(shape=(p,p))
-            partial = np.matmul(B1,np.transpose(B1))
+            U, _, _ = np.linalg.svd(M_B, full_matrices=False)
+            B1 = U[:, 0:q_tilde]
+
+            M_A = np.zeros(shape=(p, p))
+            partial = np.matmul(B1, np.transpose(B1))
             for iter2 in range(N):
                 M_A += np.matmul(np.matmul(x_train[iter2,:,:,0],partial),
                                  np.transpose(x_train[iter2,:,:,0]))
