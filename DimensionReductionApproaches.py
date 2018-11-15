@@ -121,19 +121,20 @@ def BetweenGroupMeanCentered(X,Y):
 
 
 class DimensionReduction():
-    
+
+    @staticmethod
     @CenteringDecorator
-    def PCA(x_train,**kwargs):
+    def PCA(x_train, **kwargs):
         p = np.linalg.matrix_rank(x_train)
-        k = kwargs.get('n_components',p)
-        _, s, V_t = np.linalg.svd(x_train,full_matrices=False)
+        k = kwargs.get('n_components', p)
+        _, s, V_t = np.linalg.svd(x_train, full_matrices=False)
         V = np.transpose(V_t)
-        if kwargs.get('plot',False):
+        if kwargs.get('plot', False):
             plt.plot(s**2)
         try:
-            linear_subspace = V[:,0:k]
+            linear_subspace = V[:, 0:k]
         except IndexError:
-            linear_subspace = V[:,0:p]
+            linear_subspace = V[:, 0:p]
         finally:
             return linear_subspace, s**2
             
@@ -146,9 +147,9 @@ class LinearDiscriminant(DimensionReduction):
         if x_train.shape[1] > x_train.shape[0]:
             raise ValueError('The dimension of the data should not be larger than the sample size of the data.')
         
-        between_groups_mean_centered = BetweenGroupMeanCentered(x_train,y_train)
+        between_groups_mean_centered = BetweenGroupMeanCentered(x_train, y_train)
         
-        within_groups_mean_centered = WithinGroupMeanCentered(x_train,y_train)
+        within_groups_mean_centered = WithinGroupMeanCentered(x_train, y_train)
         
         between_matrix = np.matmul(np.transpose(between_groups_mean_centered),between_groups_mean_centered)
         within_matrix = np.matmul(np.transpose(within_groups_mean_centered),within_groups_mean_centered)
@@ -156,27 +157,27 @@ class LinearDiscriminant(DimensionReduction):
         s, V = np.linalg.eig(target_matrix)
         Y_uniq = np.unique(y_train)
         r = len(Y_uniq) - 1
-        return V[:,0:r]
+        return V[:, 0:r]
 
     @staticmethod
     @CenteringDecorator
-    def FFLDA(x_train,y_train,**kwargs):
+    def FFLDA(x_train, y_train, **kwargs):
         
-        between_groups_mean_centered = BetweenGroupMeanCentered(x_train,y_train)
-        within_groups_mean_centered = WithinGroupMeanCentered(x_train,y_train)
+        between_groups_mean_centered = BetweenGroupMeanCentered(x_train, y_train)
+        within_groups_mean_centered = WithinGroupMeanCentered(x_train, y_train)
         
         r = np.linalg.matrix_rank(within_groups_mean_centered)
         
-        _, _, V_t = np.linalg.svd(x_train,full_matrices=False)
-        V_pre = np.transpose(V_t)[:,0:r]
+        _, _, V_t = np.linalg.svd(x_train, full_matrices=False)
+        V_pre = np.transpose(V_t)[:, 0:r]
         
-        between_groups_mean_centered_proj = np.matmul(between_groups_mean_centered,V_pre)
-        within_groups_mean_centered_proj = np.matmul(within_groups_mean_centered,V_pre)
+        between_groups_mean_centered_proj = np.matmul(between_groups_mean_centered, V_pre)
+        within_groups_mean_centered_proj = np.matmul(within_groups_mean_centered, V_pre)
         
-        between_matrix = np.matmul(np.transpose(between_groups_mean_centered_proj),between_groups_mean_centered_proj)
-        within_matrix = np.matmul(np.transpose(within_groups_mean_centered_proj),within_groups_mean_centered_proj)
+        between_matrix = np.matmul(np.transpose(between_groups_mean_centered_proj), between_groups_mean_centered_proj)
+        within_matrix = np.matmul(np.transpose(within_groups_mean_centered_proj), within_groups_mean_centered_proj)
         
-        target_matrix =np.matmul(np.linalg.inv(within_matrix),between_matrix)
+        target_matrix =np.matmul(np.linalg.inv(within_matrix), between_matrix)
         _, V = np.linalg.eig(target_matrix)
         
         return np.matmul(V_pre, V)
@@ -184,33 +185,32 @@ class LinearDiscriminant(DimensionReduction):
     @staticmethod
     @PCDecorator
     @CenteringDecorator
-    def NLDA(x_train,y_train,**kwargs):
+    def NLDA(x_train, y_train, **kwargs):
         
-        within_groups_mean_centered = WithinGroupMeanCentered(x_train,y_train)
-        between_groups_mean_centered = BetweenGroupMeanCentered(x_train,y_train)
-        
-        
+        within_groups_mean_centered = WithinGroupMeanCentered(x_train, y_train)
+        between_groups_mean_centered = BetweenGroupMeanCentered(x_train, y_train)
+
         r = np.linalg.matrix_rank(within_groups_mean_centered)
         _, _, V_t = np.linalg.svd(within_groups_mean_centered)
         V = np.transpose(V_t)
-        Q = V[:,r:]
+        Q = V[:, r:]
         
         r = np.linalg.matrix_rank(between_groups_mean_centered)
         groups_mean_centered_proj = np.matmul(between_groups_mean_centered,Q)
         
         _, _, U_t = np.linalg.svd(groups_mean_centered_proj)
-        U = np.transpose(U_t)[:,0:r]
+        U = np.transpose(U_t)[:, 0:r]
         
-        linear_subspace = np.matmul(Q,U)
+        linear_subspace = np.matmul(Q, U)
         
         return linear_subspace
     
     @staticmethod
     @PCDecorator
     @CenteringDecorator
-    def PIRE(x_train,y_train,**kwargs):
-        q = kwargs.get('q',3)
-        
+    def PIRE(x_train,y_train, **kwargs):
+        q = kwargs.get('q', 3)
+
         between_groups_mean_centered = BetweenGroupMeanCentered(x_train,y_train)
         
         r = np.linalg.matrix_rank(between_groups_mean_centered)
