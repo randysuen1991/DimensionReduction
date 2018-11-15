@@ -88,13 +88,13 @@ def WithinGroupMeanCentered(X,Y):
     shape.insert(0,1)
     for i in range(int(max(Y_ravel))):
         inds = np.where(Y_ravel == i + 1)[0]
-        X_group = X[inds,:]            
+        X_group = X[inds, :]
         within_group_mean = np.mean(X_group,axis=0)
         within_group_mean = np.reshape(within_group_mean,newshape=shape)
         within_group_mean_centered = X_group - within_group_mean
-        if i == 0 :
+        if i == 0:
             within_groups_mean_centered = within_group_mean_centered
-        else :
+        else:
             within_groups_mean_centered = np.concatenate((within_groups_mean_centered,within_group_mean_centered),axis=0)
     
     return within_groups_mean_centered
@@ -120,7 +120,7 @@ def BetweenGroupMeanCentered(X,Y):
     return between_groups_mean_centered
 
 
-class DimensionReduction():
+class DimensionReduction:
 
     @staticmethod
     @CenteringDecorator
@@ -151,9 +151,9 @@ class LinearDiscriminant(DimensionReduction):
         
         within_groups_mean_centered = WithinGroupMeanCentered(x_train, y_train)
         
-        between_matrix = np.matmul(np.transpose(between_groups_mean_centered),between_groups_mean_centered)
-        within_matrix = np.matmul(np.transpose(within_groups_mean_centered),within_groups_mean_centered)
-        target_matrix =np.matmul(np.linalg.inv(within_matrix),between_matrix)
+        between_matrix = np.matmul(np.transpose(between_groups_mean_centered), between_groups_mean_centered)
+        within_matrix = np.matmul(np.transpose(within_groups_mean_centered), within_groups_mean_centered)
+        target_matrix =np.matmul(np.linalg.inv(within_matrix), between_matrix)
         s, V = np.linalg.eig(target_matrix)
         Y_uniq = np.unique(y_train)
         r = len(Y_uniq) - 1
